@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>常用影音工具导航</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #222;
+            margin-bottom: 40px;
+            font-weight: 500;
+        }
+        .nav-group {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .nav-group h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 16px;
+            border-left: 4px solid #409eff;
+            padding-left: 10px;
+        }
+        /* ========== 链接列表：Grid 自适应布局 ========== */
+        .link-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .link-list a {
+            text-decoration: none;
+            color: #555;
+            padding: 12px 18px;
+            background-color: #f0f4f9;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-size: 16px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .link-list a:hover {
+            background-color: #409eff;
+            color: white;
+        }
+        /* 复制按钮：外观与链接一致，加📋区分 */
+        .link-list button.copy-btn {
+            font: inherit;
+            cursor: pointer;
+            text-decoration: none;
+            color: #555;
+            padding: 12px 18px;
+            background-color: #f0f4f9;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 16px;
+            min-height: 44px;
+        }
+        .link-list button.copy-btn:hover {
+            background-color: #409eff;
+            color: white;
+        }
+        .link-list button.copy-btn.copied {
+            background-color: #67c23a;
+            color: white;
+        }
+        .copy-icon { font-size: 14px; opacity: 0.7; }
+
+        /* ========== 焦点样式（电视遥控器导航核心）========== */
+        a:focus,
+        button:focus,
+        .copy-btn:focus,
+        .ctrl-btn:focus,
+        .song-item:focus,
+        .mini-toggle:focus {
+            outline: 4px solid #ffcc00;
+            outline-offset: 2px;
+            background-color: #409eff;
+            color: white;
+        }
+        /* 音乐播放器内按钮焦点用不同颜色区分 */
+        .ctrl-btn:focus {
+            background-color: #ffcc00;
+            color: #000;
+            outline: 3px solid #ff9900;
+        }
+
+        /* 复制成功提示层 */
+        .copy-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 60px;
+            transform: translateX(-50%) translateY(20px);
+            background: #333;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 10000;
+            max-width: 90vw;
+            word-break: break-all;
+        }
+        .copy-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        /* ==========悬浮音乐播放器样式========== */
+        .music-float {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 90vw;
+            max-width: 340px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+            z-index: 9999;
+            overflow: hidden;
+            transition: height 0.3s ease;
+        }
+        .music-float.mini {
+            height: 46px;
+        }
+        .music-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background-color: #409eff;
+            color: white;
+            cursor: pointer;
+        }
+        .music-title-text {
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 220px;
+        }
+        .mini-toggle {
+            cursor: pointer;
+            user-select: none;
+            font-size: 20px;
+            font-weight: bold;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .mini-toggle:hover,
+        .mini-toggle:focus {
+            background: rgba(255,255,255,0.2);
+        }
+        .music-body {
+            padding: 14px;
+        }
+        .music-float.mini .music-body {
+            display: none;
+        }
+        .progress-wrap {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0e0e0;
+            border-radius: 4px;
+            outline: none;
+        }
+        #progress-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #409eff;
+            cursor: pointer;
+        }
+        #progress-bar::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #409eff;
+            cursor: pointer;
+            border: none;
+        }
+        .time-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        .control-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .ctrl-btn {
+            border: none;
+            background: #f0f4f9;
+            border-radius: 6px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            min-height: 40px;
+            min-width: 60px;
+        }
+        .ctrl-btn:hover {
+            background: #409eff;
+            color: white;
+        }
+        .loop-text {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .song-list {
+            max-height: 120px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 6px;
+        }
+        .song-item {
+            padding: 8px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .song-item:hover {
+            background: #f0f4f9;
+        }
+        .song-item.active {
+            background: #409eff;
+            color: white;
+        }
+
+        /* ========== 电视/投影仪 大屏适配 ========== */
+        @media (min-width: 1920px) {
+            body {
+                padding: 60px 40px;
+                font-size: 20px;
+            }
+            .container {
+                max-width: 1200px;
+            }
+            h1 {
+                font-size: 42px;
+                margin-bottom: 50px;
+            }
+            .nav-group {
+                padding: 32px;
+                margin-bottom: 28px;
+                border-radius: 16px;
+            }
+            .nav-group h2 {
+                font-size: 28px;
+                margin-bottom: 20px;
+                border-left-width: 6px;
+            }
+            .link-list {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 16px;
+            }
+            .link-list a,
+            .link-list button.copy-btn {
+                font-size: 20px;
+                padding: 16px 24px;
+                min-height: 52px;
+                border-radius: 10px;
+            }
+            .copy-toast {
+                font-size: 18px;
+                padding: 16px 30px;
+            }
+            footer {
+                font-size: 18px;
+                margin-top: 60px;
+            }
+            /* 音乐播放器在大屏上更大 */
+            .music-float {
+                width: 420px;
+                max-width: 420px;
+                border-radius: 16px;
+            }
+            .music-header {
+                padding: 14px 18px;
+            }
+            .music-title-text {
+                font-size: 18px;
+                max-width: 300px;
+            }
+            .music-body {
+                padding: 18px;
+            }
+            #progress-bar {
+                height: 10px;
+            }
+            #progress-bar::-webkit-slider-thumb {
+                width: 22px;
+                height: 22px;
+            }
+            .time-row {
+                font-size: 14px;
+            }
+            .ctrl-btn {
+                font-size: 18px;
+                padding: 10px 18px;
+                min-height: 48px;
+                min-width: 80px;
+                border-radius: 8px;
+            }
+            .loop-text {
+                font-size: 14px;
+            }
+            .song-item {
+                font-size: 16px;
+                padding: 10px 14px;
+            }
+        }
+
+        /* ========== 平板适配 ========== */
+        @media (min-width: 768px) and (max-width: 1919px) {
+            .link-list {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            }
+            .link-list a,
+            .link-list button.copy-btn {
+                font-size: 17px;
+                padding: 14px 20px;
+            }
+        }
+
+        /* ========== 手机竖屏适配 ========== */
+        @media (max-width: 480px) {
+            body {
+                padding: 20px 10px;
+            }
+            h1 {
+                font-size: 22px;
+                margin-bottom: 24px;
+            }
+            .nav-group {
+                padding: 16px;
+                margin-bottom: 14px;
+                border-radius: 10px;
+            }
+            .nav-group h2 {
+                font-size: 16px;
+                margin-bottom: 12px;
+                padding-left: 8px;
+            }
+            .link-list {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 8px;
+            }
+            .link-list a,
+            .link-list button.copy-btn {
+                font-size: 14px;
+                padding: 10px 12px;
+                min-height: 44px;
+                border-radius: 6px;
+            }
+            .copy-icon { font-size: 12px; }
+            /* 音乐播放器在手机上更紧凑 */
+            .music-float {
+                width: 92vw;
+                right: 4vw;
+                bottom: 10px;
+                max-width: none;
+            }
+            .music-float.mini {
+                height: 40px;
+            }
+            .music-header {
+                padding: 8px 12px;
+            }
+            .music-title-text {
+                font-size: 13px;
+                max-width: 60vw;
+            }
+            .music-body {
+                padding: 10px;
+            }
+            .ctrl-btn {
+                font-size: 13px;
+                padding: 6px 10px;
+                min-height: 38px;
+            }
+            .song-list {
+                max-height: 100px;
+            }
+            .song-item {
+                font-size: 12px;
+                padding: 6px 8px;
+            }
+            footer {
+                font-size: 12px;
+                margin-top: 30px;
+            }
+        }
+
+        /* ========== 横屏手机/小平板 ========== */
+        @media (max-width: 900px) and (orientation: landscape) {
+            body {
+                padding: 15px 20px;
+            }
+            h1 {
+                font-size: 20px;
+                margin-bottom: 16px;
+            }
+            .nav-group {
+                padding: 14px 18px;
+                margin-bottom: 12px;
+            }
+            .nav-group h2 {
+                font-size: 15px;
+                margin-bottom: 10px;
+            }
+            .link-list a,
+            .link-list button.copy-btn {
+                font-size: 14px;
+                padding: 8px 14px;
+                min-height: 40px;
+            }
+            .music-float {
+                width: 300px;
+                right: 10px;
+                bottom: 10px;
+            }
+        }
+
+        /* ========== 电视遥控器媒体查询 ========== */
+        /* 粗指针设备（大多数电视） */
+        @media (pointer: coarse) and (min-width: 1024px) {
+            .music-float {
+                width: 400px;
+                bottom: 30px;
+                right: 30px;
+            }
+            .ctrl-btn {
+                font-size: 18px;
+                padding: 12px 20px;
+                min-height: 50px;
+                min-width: 80px;
+            }
+            #progress-bar {
+                height: 12px;
+            }
+            #progress-bar::-webkit-slider-thumb {
+                width: 24px;
+                height: 24px;
+            }
+            .mini-toggle {
+                width: 40px;
+                height: 40px;
+                font-size: 24px;
+            }
+            /* 电视上默认展开播放器 */
+            .music-float.mini {
+                height: auto;
+            }
+        }
+
+        /* ========== 高对比度/投影仪环境 ========== */
+        @media (dynamic-range: high), (prefers-contrast: more) {
+            body {
+                background-color: #000;
+                color: #fff;
+            }
+            .nav-group {
+                background: #111;
+                border: 1px solid #333;
+                box-shadow: 0 2px 10px rgba(255,255,255,0.05);
+            }
+            .nav-group h2 {
+                color: #fff;
+                border-left-color: #ffcc00;
+            }
+            .link-list a,
+            .link-list button.copy-btn {
+                background-color: #222;
+                color: #ddd;
+            }
+            .link-list a:hover,
+            .link-list button.copy-btn:hover {
+                background-color: #ffcc00;
+                color: #000;
+            }
+            .ctrl-btn {
+                background: #333;
+                color: #ddd;
+            }
+            .ctrl-btn:hover {
+                background: #ffcc00;
+                color: #000;
+            }
+            .song-item:hover {
+                background: #333;
+            }
+            .song-item.active {
+                background: #ffcc00;
+                color: #000;
+            }
+            .music-float {
+                background: #111;
+                border: 1px solid #444;
+            }
+            .copy-toast {
+                background: #ffcc00;
+                color: #000;
+            }
+            footer {
+                color: #aaa;
+            }
+        }
+
+        /* ========== 减少动画偏好 ========== */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>常用影音工具导航</h1>
+        <!--搜索&git -->
+        <div class="nav-group">
+            <h2>git网页</h2>
+            <div class="link-list">
+                <a href="https://bing.com" target="_blank" tabindex="0">必应</a>
+                <a href="https://github.com" target="_blank" tabindex="0">GitHub</a>
+                <a href="https://codeberg.org/" target="_blank" tabindex="0">codeberg</a>
+                <a href="https://gitee.com/" target="_blank" tabindex="0">gitee</a>
+                <a href="https://about.gitlab.com/" target="_blank" tabindex="0">gitlab</a>
+                <a href="https://www.runoob.com" target="_blank" tabindex="0">菜鸟教程</a>
+                <a href="https://tvbox.jxjs888666.top" target="_blank" tabindex="0">githubpage</a>
+                <a href="https://jxjs.jxjs888666.top" target="_blank" tabindex="0">cloudfirepage</a>
+            </div>
+        </div>
+        <!-- 直链网盘 -->
+        <div class="nav-group">
+            <h2>直链网盘</h2>
+            <div class="link-list">
+                <a href="https://kstore.cc/" target="_blank" tabindex="0">凯速</a>
+                <a href="https://fastlink.cokey.xyz/home" target="_blank" tabindex="0">酷云</a>
+                <a href="https://links.8uid.com/netdisk" target="_blank" tabindex="0">个人笔记网盘</a>
+                <a href="https://mpimg.cn" target="_blank" tabindex="0">惜染外链网盘</a>
+            </div>
+        </div>
+        <!-- 常用网盘 -->
+        <div class="nav-group">
+            <h2>常用网盘</h2>
+            <div class="link-list">
+                <a href="https://www.feijipan.com/" target="_blank" tabindex="0">小飞机盘</a>
+                <a href="https://go127.com/home" target="_blank" tabindex="0">127网盘</a>
+                <a href="https://www.lanzoui.com/" target="_blank" tabindex="0">蓝奏云</a>
+            </div>
+        </div>
+        <!-- 软件自制接口 多线路-->
+        <div class="nav-group">
+            <h2> 软件自制接口 多线路</h2>
+            <div class="link-list">
+                <button class="copy-btn" data-url="https://gh-proxy.org/https://raw.githubusercontent.com/jixiejishu/tvboxinformation/main/tvboxtools/jk/dxl/T%26S.txt" tabindex="0"><span class="copy-icon">📋</span>gh-proxy.com加速</button>
+                <button class="copy-btn" data-url="https://gh.xxooo.cf/https://raw.githubusercontent.com/jixiejishu/tvboxinformation/main/tvboxtools/jk/dxl/T%26S.txt" tabindex="0"><span class="copy-icon">📋</span>gh.xxooo.cf   加速</button>
+                <button class="copy-btn" data-url="https://cdn.jsdelivr.net/gh/jixiejishu/tvboxinformation@main/tvboxtools/jk/dxl/T%26S.txt" tabindex="0"><span class="copy-icon">📋</span>jsdelivr加速</button>
+                <button class="copy-btn" data-url="https://gitlab.com/jixiejishu/tvboxinformation/-/raw/main/tvboxtools/jk/dxl/T&S.txt" tabindex="0"><span class="copy-icon">📋</span>gitlab </button>
+                <button class="copy-btn" data-url="https://fastlink.cokey.xyz/f/EQJQIX/duo.txt" tabindex="0"><span class="copy-icon">📋</span>酷云  </button>
+            </div>
+        </div>
+        <!-- 软件自制接口 多仓库-->
+        <div class="nav-group">
+            <h2> 软件自制接口 多仓库</h2>
+            <div class="link-list">
+                <button class="copy-btn" data-url="https://gh-proxy.org/https://raw.githubusercontent.com/jixiejishu/tvboxinformation/main/tvboxtools/jk/dck/duo.txt" tabindex="0"><span class="copy-icon">📋</span>gh-proxy.com加速</button>
+                <button class="copy-btn" data-url="https://gh.xxooo.cf/https://raw.githubusercontent.com/jixiejishu/tvboxinformation/main/tvboxtools/jk/dck/duo.txt" tabindex="0"><span class="copy-icon">📋</span>gh.xxooo.cf   加速</button>
+                <button class="copy-btn" data-url="https://cdn.jsdelivr.net/gh/jixiejishu/tvboxinformation@main/tvboxtools/jk/dck/duo.txt" tabindex="0"><span class="copy-icon">📋</span>jsdelivr加速</button>
+                <button class="copy-btn" data-url="https://gitlab.com/jixiejishu/tvboxinformation/-/raw/main/tvboxtools/jk/dck/duo.txt" tabindex="0"><span class="copy-icon">📋</span>gitlab </button>
+                <button class="copy-btn" data-url="https://gitlab.com/jixiejishu/tvboxinformation/-/raw/main/tvboxtools/jk/dxl/T&S.txt" tabindex="0"><span class="copy-icon">📋</span>酷云  </button>
+            </div>
+        </div>
+        <!-- 软件自制接口 单线路-->
+        <div class="nav-group">
+            <h2> 软件自制接口 单线路</h2>
+            <div class="link-list">
+                <a href="https://gh-proxy.org/https://raw.githubusercontent.com/jixiejishu/tvboxinformation/main/tvboxtools/jk/dan/单线路.txt" target="_blank" tabindex="0">gh-proxy.com加速</a>
+                <a href="https://gh.xxooo.cf/https://raw.githubusercontent.com/jixiejishu/tvboxinformation/main/tvboxtools/jk/dan/单线路.txt" target="_blank" tabindex="0">gh.xxooo.cf </a>
+                <a href="https://cdn.jsdelivr.net/gh/jixiejishu/tvboxinformation@main/tvboxtools/jk/dan/单线路.txt" target="_blank" tabindex="0">jsdelivr加速</a>
+                <a href="https://gitlab.com/jixiejishu/tvboxinformation/-/raw/main/tvboxtools/jk/dan/单线路.txt" target="_blank" tabindex="0">gitlab </a>
+                <a href="https://fastlink.cokey.xyz/f/OVeRsM/%E5%8D%95%E7%BA%BF%E8%B7%AF.txt" target="_blank" tabindex="0">酷云 </a>
+            </div>
+        </div>
+        <!-- 常用影音网站 -->
+        <div class="nav-group">
+            <h2>常用影音网站</h2>
+            <div class="link-list">
+                <a href="https://wmdz.top/" target="_blank" tabindex="0">影用仓库</a>
+                <a href="https://apkck.top/tv.html" target="_blank" tabindex="0">影用仓库备1</a>
+                <a href="https://zouming.com/" target="_blank" tabindex="0">影用仓库备2</a>
+                <a href="https://jkss.com" target="_blank" tabindex="0">影用仓库备3</a>
+                <a href="http://qiqiv.cn/" target="_blank" tabindex="0">奇奇官网</a>
+                <a href="http://a.qiqiv.cn/zy.php" target="_blank" tabindex="0">奇奇资源站</a>
+                <a href="https://bbs.qiqiv.cn/thread-11996-1-1.html" target="_blank" tabindex="0">奇奇备用</a>
+            </div>
+        </div>
+        <!-- 影视软件下载 -->
+        <div class="nav-group">
+            <h2>影视软件下载</h2>
+            <div class="link-list">
+                <a href="https://github.com/FongMi/TV" target="_blank" tabindex="0">影视</a>
+                <a href="https://github.com/FongMi/Release/tree/fongmi/apk" target="_blank" tabindex="0">影视下载</a>
+                <a href="https://gh-proxy.org/https://github.com/FongMi/Release/raw/refs/heads/fongmi/apk/leanback-armeabi_v7a.apk" target="_blank" tabindex="0">电视版32位 armeabi_v7a</a>
+                <a href="https://gh-proxy.org/https://github.com/FongMi/Release/raw/refs/heads/fongmi/apk/leanback-arm64_v8a.apk" target="_blank" tabindex="0">电视版64位 arm64_v8a</a>
+                <a href="https://gh-proxy.org/https://github.com/FongMi/Release/raw/refs/heads/fongmi/apk/mobile-arm64_v8a.apk" target="_blank" tabindex="0">手机版64位 mobile-arm64_v8a</a>
+                <a href="https://gh-proxy.org/https://github.com/FongMi/Release/raw/refs/heads/fongmi/apk/mobile-armeabi_v7a.apk" target="_blank" tabindex="0">手机版32位 mobile-armeabi_v7a</a>
+            </div>
+        </div>
+        <!-- 影视二次开发版 -->
+        <div class="nav-group">
+            <h2>影视二次开发版 （发行版本参考影视）</h2>
+            <div class="link-list">
+                <a href="https://github.com/fish2018/webhtv" target="_blank" tabindex="0">webhtv 鱼壳（与影视包名一致不可共存）</a>
+                <a href="https://github.com/Silent1566/webhtv" target="_blank" tabindex="0">默影视（可共存）</a>
+           </div>
+        </div>
+
+        <!-- 影视多平台版 -->
+        <div class="nav-group">
+            <h2>影视多平台版</h2>
+            <div class="link-list">
+                <a href="https://github.com/ingriddaleusag-dotcom/PickTV" target="_blank" tabindex="0">PeekPro 羊壳 多平台</a>
+                <a href="https://github.com/kknifer7/FreeBox" target="_blank" tabindex="0">Freebox</a>
+                <a href="https://github.com/kknifer7/TV-K  " target="_blank" tabindex="0">影视-K版与 FreeBox 搭配使用</a>
+                <a href="https://github.com/Greatwallcorner/TV-Multiplatform" target="_blank" tabindex="0">TV-Multiplatform</a>
+            </div>
+        </div>
+
+        <!-- 其它软件下载 -->
+        <div class="nav-group">
+            <h2>其它软件下载</h2>
+            <div class="link-list">
+                <a href="https://github.com/q215613905/TVBoxOS" target="_blank" tabindex="0">Q版TVbox</a>
+                <a href="https://github.com/takagen99/Box" target="_blank" tabindex="0">T版TVbox</a>
+                <a href="https://github.com/o0HalfLife0o/TVBoxOSC" target="_blank" tabindex="0">TVbox下载</a>
+                <a href="https://appck.top/ysc1/36.html" target="_blank" tabindex="0">影视仓</a>
+                <a href="https://github.com/YYDS678/uzVideo  " target="_blank" tabindex="0">UZ UZN</a>
+                <a href="https://t.me/uzvideoplay  " target="_blank" tabindex="0">UZ频道 发布软件</a>
+                <a href="https://t.me/uzVideoApp  " target="_blank" tabindex="0">UZ群组</a>
+                <a href="https://pd.qq.com/s/c2c47cpwq  " target="_blank" tabindex="0">应用管家QQ频道</a>
+                <a href="https://pd.qq.com/s/5o1prz3fe  " target="_blank" tabindex="0">应用管家下载</a>
+                <a href="https://share.feijipan.com/s/AnEEQTwX" target="_blank" tabindex="0">小飞机网盘</a>
+                <a href="https://links.8uid.com/s/5c6459b28f73e65dafa5d0c9582e40a4" target="_blank" tabindex="0">个人笔记云网盘</a>
+                <a href="https://www.go127.com/s/BdRH7" target="_blank" tabindex="0">127网盘</a>
+                <a href="https://526900.xyz/" target="_blank" tabindex="0">裤佬网盘</a>
+            </div>
+        </div>
+        <!-- 开源项目 -->
+        <div class="nav-group">
+            <h2>开源项目</h2>
+            <div class="link-list">
+                <a href="https://github.com/qist/tvbox" target="_blank" tabindex="0">高天流云</a>
+                <a href="https://github.com/takagen99/Box" target="_blank" tabindex="0">南风</a>
+                <a href="https://github.com/xyq254245/xyqonlinerule" target="_blank" tabindex="0">香雅情</a>
+                <a href="https://github.com/jsnzkpg/jsnzkpg" target="_blank" tabindex="0">裤佬</a>
+                <a href="https://github.com/mhmdxahmd/mafly" target="_blank" tabindex="0">maflya</a>
+                <a href="https://github.com/ggrrttyyiii/CatVodSpider" target="_blank" tabindex="0">小米</a>
+            </div>
+        </div>
+        <!-- ZB项目 -->
+        <div class="nav-group">
+            <h2>ZB项目</h2>
+            <div class="link-list">
+                <a href="https://github.com/Guovin/iptv-api" target="_blank" tabindex="0">Guovin</a>
+                <a href="https://github.com/mytv-android/iptv-api" target="_blank" tabindex="0">mytv-android Guovin fork</a>
+                <a href="https://github.com/vbskycn/iptv" target="_blank" tabindex="0">zbds项目</a>
+                <a href="https://live.zbds.top/" target="_blank" tabindex="0">zbds网站</a>
+                <a href="https://github.com/qingtingjjjjjjj/iptv-auto-update" target="_blank" tabindex="0">qingtingjjjjjjj</a>
+                <a href="https://github.com/ioptu/migu_video" target="_blank" tabindex="0">migu</a>
+            </div>
+        </div>
+        <!-- 常用资料网站 -->
+        <div class="nav-group">
+            <h2>常用资料网站</h2>
+            <div class="link-list">
+                <a href="https://www.iptvindex.com/" target="_blank" tabindex="0">看电视</a>
+                <a href="https://www.lsapk.com" target="_blank" tabindex="0">蓝鲨应用库</a>
+                <a href="https://www.7xiazai.com/" target="_blank" tabindex="0">小兵下载站</a>
+                <a href="https://juwanhezi.com/" target="_blank" tabindex="0">聚玩盒子</a>
+            </div>
+        </div>
+        <!-- 常用导航网站 -->
+        <div class="nav-group">
+            <h2>常用导航网站</h2>
+            <div class="link-list">
+                <a href="https://jsnzkpg.com/" target="_blank" tabindex="0">裤佬</a>
+                <a href="https://www.maflya.com" target="_blank" tabindex="0">maflya</a>
+                <a href="http://www.饭太硬.cc" target="_blank" tabindex="0">饭太硬</a>
+                <a href="https://tv.菜妮丝.top" target="_blank" tabindex="0">菜妮丝</a>
+                <a href="https://www.王二小放牛娃.top/" target="_blank" tabindex="0">王二小放牛娃</a>
+                <a href="https://www.小不点.com/" target="_blank" tabindex="0">摸鱼儿</a>
+                <a href="http://www.英格里希嗷呜.top" target="_blank" tabindex="0">嗷呜</a>
+            </div>
+        </div>
+        <!-- 音乐软件 -->
+        <div class="nav-group">
+            <h2>音乐软件</h2>
+            <div class="link-list">
+                <a href="https://lxmusic.toside.cn/" target="_blank" tabindex="0">洛雪官网</a>
+                <a href="https://github.com/lyswhut/lx-music-desktop" target="_blank" tabindex="0">洛雪桌面版</a>
+                <a href="https://github.com/lyswhut/lx-music-mobile" target="_blank" tabindex="0">洛雪移动版</a>
+                <a href="https://musicfree.catcat.work/" target="_blank" tabindex="0">MusicFree 官网</a>
+                <a href="https://github.com/maotoumao/MusicFree" target="_blank" tabindex="0">MusicFree</a>
+                <a href="https://github.com/maotoumao/MusicFreeDesktop" target="_blank" tabindex="0">MusicFree 桌面版</a>
+                <a href="https://github.com/kejichangqing/QingMusic" target="_blank" tabindex="0">青听音乐</a>
+                <a href="https://github.com/wzh15802/lxmusic" target="_blank" tabindex="0">imwzh项目</a>
+                <a href="https://music.imwzh.com/" target="_blank" tabindex="0">mwzh项目网页</a>
+                <a href="https://github.com/pdone/lx-music-source" target="_blank" tabindex="0">lx-music-source</a>
+                <a href="https://awaw.cc/post/lx-music-source" target="_blank" tabindex="0">lx-music-source网页</a>
+            </div>
+        </div>
+        <!--ios -->
+        <div class="nav-group">
+            <h2>iOS</h2>
+            <div class="link-list">
+                <a href="https://apps.apple.com/" target="_blank" tabindex="0">Miraplay 非国区安装</a>
+                <a href="https://apps.apple.com/" target="_blank" tabindex="0">JSTV 非国区安装</a>
+                <a href="https://juwanhezi.com/" target="_blank" tabindex="0">聚玩盒子 伪装上架</a>
+                <a href="https://yinghezhinan.com/ios-app/" target="_blank" tabindex="0">硬核指南 伪装上架</a>
+                <a href="https://wmdz.top/" target="_blank" tabindex="0">PeeKPro（羊壳 ，先万能签然后巨魔） </a>
+                <a href="https://wmdz.top/" target="_blank" tabindex="0">UZ UZN</a>
+                <a href="https://t.me/TVBoxxoo" target="_blank" tabindex="0">ibox 饭太硬群组</a>
+            </div>
+        </div>
+        <!-- 加速 -->
+        <div class="nav-group">
+            <h2>加速</h2>
+            <div class="link-list">
+                <a href="https://gh-proxy.com/" target="_blank" tabindex="0">gh-proxy.com 最常用</a>
+                <a href="https://github.catvod.com/" target="_blank" tabindex="0">github.catvod.com</a>
+                <a href="https://gh.xxooo.cf/" target="_blank" tabindex="0">饭太硬</a>
+                <a href="https://github.ednovas.xyz/" target="_blank" tabindex="0">github.ednovas.xyz</a>
+                <a href="https://ghproxy.net/" target="_blank" tabindex="0">ghproxy.net</a>
+                <a href="https://cdn.jsdelivr.net" target="_blank" tabindex="0">jsdelivr 按网页提示操作</a>
+            </div>
+        </div>
+        <!-- 系统与软件论坛 -->
+        <div class="nav-group">
+            <h2>系统与软件论坛</h2>
+            <div class="link-list">
+                <a href="https://www.znds.com" target="_blank" tabindex="0">智能电视论坛（当贝）</a>
+                <a href="https://www.dangbei.com/" target="_blank" tabindex="0">当贝网</a>
+                <a href="https://www.right.com.cn/forum/forum.php" target="_blank" tabindex="0">恩山</a>
+                <a href="https://www.52pojie.cn/" target="_blank" tabindex="0">吾爱破解</a>
+                <a href="https://www.kaixindianshi.com/" target="_blank" tabindex="0">开心电视助手（注册费很贵）</a>
+                <a href="https://slimboxtv.ru/" target="_blank" tabindex="0">slimboxtv固件</a>
+                <a href="https://www.right.com.cn/forum/space-uid-54186.html" target="_blank" tabindex="0">恩山fax001 固件</a>
+            </div>
+        </div>
+        <!-- 特殊固件软件 -->
+        <div class="nav-group">
+            <h2>特殊固件软件</h2>
+            <div class="link-list">
+                <a href="https://github.com/armbian" target="_blank" tabindex="0">armbian</a>
+                <a href="https://www.emuelec.cn/" target="_blank" tabindex="0">EmuELEC中文网</a>
+                <a href="https://github.com/EmuELEC/EmuELEC" target="_blank" tabindex="0">EmuELEC论坛</a>
+                <a href="https://github.com/CoreELEC/CoreELEC" target="_blank" tabindex="0">CoreELEC</a>
+                <a href="https://github.com/xbmc/xbmc" target="_blank" tabindex="0">kodi</a>
+                <a href="http://www.kodiplayer.cn/" target="_blank" tabindex="0">kodi中文网</a>
+                <a href="https://www.kodi.org.cn/" target="_blank" tabindex="0">kodi中文网</a>
+            </div>
+        </div>
+        <!-- 路由WiFi -->
+        <div class="nav-group">
+            <h2>路由WiFi</h2>
+            <div class="link-list">
+                <a href="https://openwrt.org/" target="_blank" tabindex="0">openwrt</a>
+                <a href="https://github.com/istoreos/istoreos" target="_blank" tabindex="0">istoreos</a>
+                <a href="https://github.com/home-assistant" target="_blank" tabindex="0">home-assistant</a>
+                <a href="https://www.acwifi.net/" target="_blank" tabindex="0">ACwifi</a>
+                <a href="https://www.anywlan.com/" target="_blank" tabindex="0">爱快</a>
+                <a href="https://fnnas.com/" target="_blank" tabindex="0">飞牛</a>
+            </div>
+        </div>
+        <footer>常用影音工具导航，搜集自网络，感谢各位作者的无私分享与辛勤劳动！</footer>
+    </div>
+
+    <!-- 复制成功提示层 -->
+    <div class="copy-toast" id="copyToast">✅ 已复制到剪贴板</div>
+
+    <script>
+        // ========== 点击复制功能（事件委托 + 多层兼容）==========
+        const copyToast = document.getElementById("copyToast");
+        let toastTimer = null;
+
+        function showToast(msg, isError) {
+            copyToast.textContent = msg || "✅ 已复制到剪贴板";
+            copyToast.style.background = isError ? "#e74c3c" : "#333";
+            copyToast.classList.add("show");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                copyToast.classList.remove("show");
+            }, 3000);
+        }
+
+        // 多层降级复制方案，返回值：Promise<boolean> 表示是否成功
+        function copyText(text) {
+            return new Promise((resolve) => {
+                // 第1层：现代 Clipboard API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(
+                        () => resolve(true),
+                        () => tryExecCommand(text, resolve)
+                    );
+                } else {
+                    tryExecCommand(text, resolve);
+                }
+            });
+        }
+
+        // 第2层：textarea + execCommand（兼容 file:// 和旧浏览器）
+        function tryExecCommand(text, resolve) {
+            try {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.top = "0";
+                ta.style.left = "-9999px";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                ta.setSelectionRange(0, text.length);
+                const ok = document.execCommand("copy");
+                document.body.removeChild(ta);
+                if (ok) {
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            } catch (e) {
+                resolve(false);
+            }
+        }
+
+        document.addEventListener("click", async function (e) {
+            const btn = e.target.closest("button.copy-btn");
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const url = btn.getAttribute("data-url") || "";
+            const displayUrl = decodeURIComponent(url);
+            const ok = await copyText(url);
+            if (ok) {
+                btn.classList.add("copied");
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = "✅ 已复制";
+                showToast("✅ 已复制：" + displayUrl);
+                setTimeout(() => {
+                    btn.classList.remove("copied");
+                    btn.innerHTML = originalHTML;
+                }, 1500);
+            } else {
+                showToast("❌ 自动复制失败，请长按/手动复制");
+                const helper = document.createElement("input");
+                helper.value = url;
+                helper.style.position = "fixed";
+                helper.style.top = "50%";
+                helper.style.left = "50%";
+                helper.style.transform = "translate(-50%, -50%)";
+                helper.style.zIndex = "99999";
+                helper.style.padding = "8px";
+                helper.style.width = "80%";
+                helper.style.maxWidth = "500px";
+                document.body.appendChild(helper);
+                helper.focus();
+                helper.select();
+                setTimeout(() => document.body.removeChild(helper), 5000);
+            }
+        });
+
+        // ========== 电视遥控器焦点管理 ==========
+        // 当播放器展开时，将焦点限制在播放器内部
+        const musicFloat = document.getElementById("musicFloat");
+        const focusableElements = 'button, [href], input, [tabindex]:not([tabindex="-1"])';
+
+        musicFloat.addEventListener('keydown', function(e) {
+            if (musicFloat.classList.contains('mini')) return;
+            const focusables = musicFloat.querySelectorAll(focusableElements);
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (e.key === 'Tab') {
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        });
+    </script>
+
+    <!-- ==========悬浮音乐播放器HTML========== -->
+    <div class="music-float" id="musicFloat">
+        <div class="music-header" tabindex="0">
+            <span class="music-title-text" id="nowTitle">🎵 点击播放音乐</span>
+            <span class="mini-toggle" id="miniBtn" title="最小化/展开" tabindex="0">−</span>
+        </div>
+        <div class="music-body">
+            <audio id="audioPlayer"></audio>
+            <div class="progress-wrap">
+                <input type="range" id="progress-bar" min="0" max="100" value="0" step="0.1" tabindex="0">
+            </div>
+            <div class="time-row">
+                <span id="curTime">00:00</span>
+                <span id="durTime">00:00</span>
+            </div>
+            <div class="control-row">
+                <button class="ctrl-btn" id="prevBtn" tabindex="0">⏮ 上一首</button>
+                <button class="ctrl-btn" id="playBtn" tabindex="0">▶ 播放</button>
+                <button class="ctrl-btn" id="nextBtn" tabindex="0">下一首 ⏭</button>
+            </div>
+            <div class="control-row">
+                <button class="ctrl-btn" id="loopBtn" tabindex="0">🔁 列表循环</button>
+            </div>
+            <div class="loop-text" id="loopTip">模式：列表循环</div>
+            <div class="song-list" id="songListDom"></div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 音乐列表（修复了最后一首的无效URL前缀）==========
+        const songList = [
+            { src: "https://mpimg.cn/view.php/928aca64f3429dc864c30073775b7127.flac", title: "溢愛", artist: "上松範康", album: "喰霊-零- 5 スペシャルCD" },
+            { src: "https://mpimg.cn/view.php/bde3e509ea01a37b2d1c0a19c914e947.flac", title: "雨幕", artist: "灵空GTech", album: "雨幕" },
+            { src: "https://mpimg.cn/view.php/0445d9c69565842a0e219a5d7d69c94c.flac", title: "River Flows In You", artist: "Martin Ermen", album: "Kuschelklassik Piano Dreams, Vol. 2" },
+            { src: "https://mpimg.cn/view.php/9c50bbd22f70b12d32ceff3824a03a30.flac", title: "夜的钢琴曲", artist: "石进", album: "夜的钢琴曲" },
+            { src: "https://mpimg.cn/view.php/b3a2b8b7e7081fd153150a0b7c71c8af.flac", title: "卡农", artist: "文武贝", album: "探清水河" },
+            { src: "https://mpimg.cn/view.php/9b15e3ac712a7bfbb4990053af9695b7.mp3", title: "月光", artist: "贝多芬", album: "钢琴奏鸣曲" },
+            { src: "https://mpimg.cn/view.php/c5cbe28cf3e982782bb59c50adb9fb00.mp3", title: "Gymnopédie No.1", artist: "Erik Satie", album: "Gymnopédies" },
+            { src: "https://mpimg.cn/view.php/5d77586de1ee6b0a252c4d73add475e2.mp3", title: "Clair de Lune", artist: "Debussy", album: "Suite Bergamasque" }
+        ];
+
+        // 循环模式：0=列表循环 1=单曲循环 2=随机播放
+        let loopMode = 0;
+        const modeText = ["列表循环", "单曲循环", "随机播放"];
+        let currentIndex = 0;
+        let isDragging = false;
+
+        const audio = document.getElementById("audioPlayer");
+        const musicFloatEl = document.getElementById("musicFloat");
+        const miniBtn = document.getElementById("miniBtn");
+        const playBtn = document.getElementById("playBtn");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const loopBtn = document.getElementById("loopBtn");
+        const loopTip = document.getElementById("loopTip");
+        const progressBar = document.getElementById("progress-bar");
+        const curTimeDom = document.getElementById("curTime");
+        const durTimeDom = document.getElementById("durTime");
+        const nowTitleDom = document.getElementById("nowTitle");
+        const songListDom = document.getElementById("songListDom");
+
+        // ========== 渲染歌单列表 ==========
+        function renderSongList() {
+            songListDom.innerHTML = "";
+            songList.forEach((s, idx) => {
+                const div = document.createElement("div");
+                div.className = "song-item" + (idx === currentIndex ? " active" : "");
+                div.innerText = `${idx + 1}. ${s.title} - ${s.artist}`;
+                div.tabIndex = 0;
+                div.onclick = () => playIndex(idx);
+                div.onkeydown = (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        playIndex(idx);
+                    }
+                };
+                songListDom.appendChild(div);
+            });
+        }
+
+        // ========== 格式化时间 ==========
+        function formatTime(sec) {
+            if (isNaN(sec)) return "00:00";
+            let m = Math.floor(sec / 60);
+            let s = Math.floor(sec % 60);
+            return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+        }
+
+        // ========== 加载并播放指定序号 ==========
+        function playIndex(idx) {
+            currentIndex = idx;
+            const song = songList[currentIndex];
+            audio.src = song.src;
+            nowTitleDom.innerText = "🎵 " + song.title + " - " + song.artist;
+            renderSongList();
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    playBtn.innerText = "⏸ 暂停";
+                }).catch(() => {
+                    playBtn.innerText = "▶ 播放";
+                    nowTitleDom.innerText = "🔇 点击播放按钮开始";
+                });
+            }
+        }
+
+        // ========== 上一首 ==========
+        function prevSong() {
+            if (loopMode === 2) {
+                currentIndex = Math.floor(Math.random() * songList.length);
+            } else {
+                currentIndex--;
+                if (currentIndex < 0) currentIndex = songList.length - 1;
+            }
+            playIndex(currentIndex);
+        }
+
+        // ========== 下一首 ==========
+        function nextSong() {
+            if (loopMode === 2) {
+                currentIndex = Math.floor(Math.random() * songList.length);
+            } else {
+                currentIndex++;
+                if (currentIndex >= songList.length) currentIndex = 0;
+            }
+            playIndex(currentIndex);
+        }
+
+        // ========== 切换循环模式 ==========
+        function toggleLoop() {
+            loopMode = (loopMode + 1) % 3;
+            loopBtn.innerText = "🔁 " + modeText[loopMode];
+            loopTip.innerText = "模式：" + modeText[loopMode];
+        }
+
+        // ========== 最小化/展开 ==========
+        miniBtn.onclick = function (e) {
+            e.stopPropagation();
+            musicFloatEl.classList.toggle("mini");
+            miniBtn.innerText = musicFloatEl.classList.contains("mini") ? "+" : "−";
+            if (!musicFloatEl.classList.contains("mini")) {
+                // 展开后将焦点给播放按钮（方便电视遥控器操作）
+                setTimeout(() => playBtn.focus(), 100);
+            }
+        };
+
+        // 点击 header 也可以切换最小化
+        document.querySelector('.music-header').addEventListener('click', function(e) {
+            if (e.target === miniBtn) return;
+            miniBtn.click();
+        });
+
+        // ========== 播放/暂停 ==========
+        playBtn.onclick = function () {
+            if (audio.paused) {
+                if (!audio.src || audio.src === window.location.href) {
+                    playIndex(0);
+                } else {
+                    audio.play();
+                    playBtn.innerText = "⏸ 暂停";
+                }
+            } else {
+                audio.pause();
+                playBtn.innerText = "▶ 播放";
+            }
+        };
+
+        // 空格键快捷播放/暂停（当焦点在播放器区域时）
+        musicFloatEl.addEventListener('keydown', function(e) {
+            if (e.key === " " || e.key === "Enter") {
+                if (e.target === musicFloatEl || e.target.classList.contains('music-header')) {
+                    e.preventDefault();
+                    playBtn.click();
+                }
+            }
+        });
+
+        prevBtn.onclick = prevSong;
+        nextBtn.onclick = nextSong;
+        loopBtn.onclick = toggleLoop;
+
+        // ========== 进度条拖动 ==========
+        progressBar.addEventListener("mousedown", () => { isDragging = true; });
+        progressBar.addEventListener("mouseup", () => { isDragging = false; });
+        progressBar.addEventListener("touchstart", () => { isDragging = true; }, {passive:true});
+        progressBar.addEventListener("touchend", () => { isDragging = false; });
+
+        progressBar.oninput = function () {
+            if (audio.duration) {
+                audio.currentTime = audio.duration * (Number(this.value) / 100);
+            }
+        };
+
+        // ========== 音频事件监听 ==========
+        audio.addEventListener("timeupdate", () => {
+            if (isDragging || !audio.duration) return;
+            let percent = (audio.currentTime / audio.duration) * 100;
+            progressBar.value = percent;
+            curTimeDom.innerText = formatTime(audio.currentTime);
+        });
+
+        audio.addEventListener("loadedmetadata", () => {
+            durTimeDom.innerText = formatTime(audio.duration);
+        });
+
+        // 歌曲结束
+        audio.addEventListener("ended", () => {
+            if (loopMode === 1) {
+                audio.currentTime = 0;
+                audio.play();
+            } else {
+                nextSong();
+            }
+        });
+
+        // ========== 初始化 ==========
+        renderSongList();
+        loopBtn.innerText = "🔁 " + modeText[loopMode];
+        loopTip.innerText = "模式：" + modeText[loopMode];
+        audio.src = songList[0].src;
+        nowTitleDom.innerText = "🎵 " + songList[0].title + " - " + songList[0].artist;
+    </script>
+</body>
+</html>
